@@ -25,20 +25,21 @@ function populateWeatherConditions (weather) {
 
 
 function getWeatherInfo(location, callback) {
-	var api_key = "YOUR_API_KEY";
-	forge.logging.info("[getWeatherInfo] getting weather for for " + location);
-	forge.request.ajax({
-		url: "http://api.wunderground.com/api/" + api_key +
-				"/conditions/forecast/q/" +	location + ".json",
-		dataType: "json",
-		success: function (data) {
+	forge.logging.info("[getWeatherInfo] getting weather for " + location);
+	var query = new Kinvey.Query();
+	query.on("state").equal(location.split('/')[0]);
+	query.on("city").equal(location.split('/')[1]);
+	var collection = new Kinvey.Collection("weather", { query: query });
+	collection.fetch({
+		success: function(data) {
 			forge.logging.info("[getWeatherInfo] success");
-			callback(data);
+			callback(data[0].attr);
 		},
-		error: function (error) {
+		error: function(error) {
 			forge.logging.error("[getWeatherInfo] " + JSON.stringify(error));
 		}
 	});
+
 };
 
 
@@ -53,6 +54,11 @@ function emptyContent() {
 
 
 $(function () {
+	Kinvey.init({
+		appKey: "<your-kinvey-appKey>",
+		appSecret: "<your-kinvey-appSecret>"
+	});
+
 	var cities = [ 
 		{ name: "London", code: "UK/London" },
 		{ name: "San Francisco", code: "CA/San_Francisco" },
@@ -68,7 +74,7 @@ $(function () {
 		{ name: "Miami", code: "FL/Miami" },
 		{ name: "West Palm Beach", code: "FL/West_Palm_Beach" } 
 	];
-	cities.forEach(function(city) {	
+	cities.forEach(function(city) { 
 		$("#city_menu").append("<option value='" + city.code + "'>" + city.name + "</option>");
 	});
 	$("#city_menu").change(function() {
